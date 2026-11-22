@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-#[Fillable(['title', 'is_completed'])]
+#[Fillable(['task_id', 'title', 'is_completed'])]
 class Subtask extends Model
 {
     /**

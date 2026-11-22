@@ -1,119 +1,354 @@
 @extends('layout.app')
 
 @section('content')
+@php
+    $jam = (int) now()->format('H');
+    $sapaan = match (true) {
+        $jam < 11 => 'Selamat Pagi',
+        $jam < 15 => 'Selamat Siang',
+        $jam < 18 => 'Selamat Sore',
+        default => 'Selamat Malam',
+    };
+    $namaDepan = explode(' ', trim($user->name ?? ''))[0] ?: 'Sahabat';
+    $totalHariIni = $stats['total_today'];
+    $selesaiHariIni = $stats['completed_today'];
+    $pendingHariIni = $totalHariIni - $selesaiHariIni;
+    $persentase = $totalHariIni > 0 ? (int) round($selesaiHariIni / $totalHariIni * 100) : 0;
+@endphp
+
 <div style="min-height: 100vh; width: 100%; background: #FDF8E2; font-family: 'Nunito Sans', sans-serif; display: flex; flex-direction: column;">
 
     <!-- NAVBAR -->
-    <header style="background: white; border-bottom: 1px solid #D9DDBE; padding: 16px 5%; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 50;">
-        <!-- Logo -->
-        <div style="display: flex; align-items: center; gap: 12px;">
-            <div style="width: 40px; height: 40px; background: #233D7B; border-radius: 8px; display: flex; justify-content: center; align-items: center; color: white; font-weight: 900;">DP</div>
-            <div style="color: #233D7B; font-size: 22px; font-weight: 800;">DailyPlan</div>
-        </div>
-
-        <!-- Menu Navigasi -->
-        <nav style="display: flex; gap: 8px;">
-            <a href="{{ route('dashboard') }}" style="padding: 10px 20px; background: #FBE2A8; border-radius: 99px; color: #233D7B; font-size: 14px; font-weight: 800; text-decoration: none;">Beranda</a>
-            <a href="#" style="padding: 10px 20px; border-radius: 99px; color: #233D7B; font-size: 14px; font-weight: 600; text-decoration: none; transition: background 0.3s;">Kalender</a>
-            <a href="#" style="padding: 10px 20px; border-radius: 99px; color: #233D7B; font-size: 14px; font-weight: 600; text-decoration: none; transition: background 0.3s;">Tugas</a>
-            <a href="#" style="padding: 10px 20px; border-radius: 99px; color: #233D7B; font-size: 14px; font-weight: 600; text-decoration: none; transition: background 0.3s;">Kemajuan</a>
-        </nav>
-
-        <!-- Profil Akun -->
-        <div style="display: flex; align-items: center; gap: 16px;">
-            <!-- Ikon Notifikasi -->
-            <button style="width: 40px; height: 40px; background: #FDF8E2; border-radius: 50%; border: none; cursor: pointer; display: flex; justify-content: center; align-items: center;">
-                <svg width="20" height="20" fill="none" stroke="#233D7B" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path></svg>
-            </button>
-            <!-- Data User Dinamis dari Laravel Auth -->
-            <img src="{{ asset('images/avatar-default.png') }}" alt="Profil" style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover;" />
-            <div style="display: flex; flex-direction: column;">
-                <div style="color: #233D7B; font-size: 14px; font-weight: 800;">{{ Auth::user()->name ?? 'Pengguna' }}</div>
-                <div style="color: #78829B; font-size: 12px;">Pelajar produktif</div>
-            </div>
-        </div>
-    </header>
+    <x-navbar />
 
     <!-- KONTEN UTAMA -->
-    <main style="padding: 40px 5%; display: flex; flex-direction: column; gap: 32px; flex: 1;">
+    <main class="dp-page" style="width: 100%; background: #FDF8E2; padding: 36px 5%; box-sizing: border-box; display: flex; flex-direction: column; gap: 32px; flex: 1;">
 
-        <!-- Header & Tambah Tugas -->
-        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 20px;">
-            <div>
-                <!-- Mengambil nama depan user -->
-                <h1 style="color: #233D7B; font-size: 32px; font-weight: 800; margin-bottom: 8px;">Selamat Pagi, {{ explode(' ', Auth::user()->name ?? 'Bro')[0] }}!</h1>
-                <!-- Tanggal Dinamis -->
-                <p style="color: #78829B; font-size: 15px; margin: 0;">{{ \Carbon\Carbon::now()->translatedFormat('l, d F Y') }} • Yuk, buat hari ini berarti.</p>
-            </div>
-            <button style="padding: 14px 24px; background: #EAA549; color: #233D7B; font-size: 15px; font-weight: 800; border: none; border-radius: 12px; cursor: pointer; box-shadow: 0px 8px 16px rgba(35, 61, 123, 0.1); transition: transform 0.2s;">
-                + Tambah Tugas
-            </button>
+        <!-- Header Halaman -->
+        <div>
+            <h1 style="color: #233D7B; font-size: 32px; font-weight: 800; margin-bottom: 8px;">{{ $sapaan }}, {{ $namaDepan }}!</h1>
+            <p class="dp-subtitle" style="color: #78829B; font-size: 15px; margin: 0;">{{ now()->translatedFormat('l, d F Y') }}</p>
         </div>
 
-        <!-- Kartu Ringkasan (Grid Responsif) -->
+        <!-- Kartu Ringkasan (angka asli dari database) -->
         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 24px;">
             <!-- Gambaran Umum -->
-            <div style="background: white; padding: 28px; border-radius: 20px; box-shadow: 0px 8px 24px rgba(35, 61, 123, 0.06); display: flex; flex-direction: column; justify-content: center;">
-                <h2 style="color: #233D7B; font-size: 20px; font-weight: 800; margin-bottom: 24px;">Gambaran Umum Hari Ini</h2>
-                <div style="display: flex; justify-content: space-around; align-items: center;">
-                    <div style="text-align: center;"><div style="color: #233D7B; font-size: 32px; font-weight: 900;">5</div><div style="color: #78829B; font-size: 13px;">Tugas</div></div>
-                    <div style="text-align: center;"><div style="color: #233D7B; font-size: 32px; font-weight: 900;">2</div><div style="color: #78829B; font-size: 13px;">Selesai</div></div>
-                    <div style="text-align: center;"><div style="color: #233D7B; font-size: 32px; font-weight: 900;">3</div><div style="color: #78829B; font-size: 13px;">Pending</div></div>
+            <div class="dp-surface" style="padding: 28px; display: flex; flex-direction: column; gap: 20px;">
+                <h2 style="color: #233D7B; font-size: 18px; font-weight: 800; margin: 0;">Ringkasan Hari Ini</h2>
+                <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px;">
+                    <div>
+                        <span class="dp-label">Tugas</span>
+                        <span class="dp-number" data-stat="total">{{ $totalHariIni }}</span>
+                    </div>
+                    <div>
+                        <span class="dp-label">Selesai</span>
+                        <span class="dp-number" data-stat="completed">{{ $selesaiHariIni }}</span>
+                    </div>
+                    <div>
+                        <span class="dp-label">Pending</span>
+                        <span class="dp-number" data-stat="pending">{{ $pendingHariIni }}</span>
+                    </div>
                 </div>
             </div>
 
-            <!-- Kartu Motivasi/Progress -->
-            <div style="background: white; padding: 28px; border-radius: 20px; box-shadow: 0px 8px 24px rgba(35, 61, 123, 0.06); display: flex; align-items: center; gap: 24px;">
-                <!-- Lingkaran Progress -->
-                <div style="width: 80px; height: 80px; border-radius: 50%; border: 8px solid #EAA549; display: flex; justify-content: center; align-items: center; color: #233D7B; font-size: 20px; font-weight: 900;">
-                    80%
+            <!-- Kartu Progres -->
+            <div class="dp-surface" style="padding: 28px; display: flex; align-items: center; gap: 24px;">
+                <div style="width: 80px; height: 80px; border-radius: 50%; border: 8px solid #EAA549; display: flex; justify-content: center; align-items: center; color: #233D7B; font-size: 20px; font-weight: 800; font-variant-numeric: tabular-nums; flex-shrink: 0;">
+                    <span data-progress>{{ $persentase }}%</span>
                 </div>
-                <div>
-                    <h3 style="color: #233D7B; font-size: 18px; font-weight: 800; margin-bottom: 4px;">Gokil, {{ explode(' ', Auth::user()->name ?? 'Bro')[0] }}!!</h3>
-                    <p style="color: #78829B; font-size: 14px; margin: 0; line-height: 1.5;">Sedikit lagi menuju target harianmu.</p>
+                <div style="display: flex; flex-direction: column; gap: 6px;">
+                    <h3 style="color: #233D7B; font-size: 18px; font-weight: 800; margin: 0;">Progres harian</h3>
+                    <p style="color: #78829B; font-size: 14px; margin: 0; line-height: 1.5;">
+                        {{ $totalHariIni === 0 ? 'Belum ada tugas terjadwal.' : ($selesaiHariIni === $totalHariIni ? 'Semua tugas hari ini selesai.' : 'Sisa beberapa tugas lagi hari ini.') }}
+                    </p>
+                    <p style="color: #233D7B; font-size: 12px; font-weight: 700; margin: 0; display: flex; align-items: center; gap: 7px;">
+                        <span class="dp-dot" style="background: #EAA549;"></span>
+                        {{ $stats['urgent_count'] }} tugas perlu perhatian dalam 2 hari ke depan
+                    </p>
                 </div>
             </div>
         </div>
 
-        <!-- Daftar Tugas -->
+        <!-- Daftar Tugas Hari Ini -->
         <div style="display: flex; flex-direction: column; gap: 16px;">
             <div style="display: flex; justify-content: space-between; align-items: center;">
-                <h2 style="color: #233D7B; font-size: 22px; font-weight: 800; margin: 0;">To-Do List</h2>
-                <select style="background: transparent; color: #47608F; font-size: 14px; font-weight: 700; border: none; outline: none; cursor: pointer;">
-                    <option>Semua tugas</option>
-                    <option>Selesai</option>
-                    <option>Pending</option>
-                </select>
+                <h2 style="color: #233D7B; font-size: 22px; font-weight: 800; margin: 0;">To-Do List Hari Ini</h2>
+                <span style="color: #78829B; font-size: 13px; font-weight: 700;">{{ $totalHariIni }} tugas</span>
             </div>
 
-            <!-- List Item 1 (Selesai) -->
-            <div style="background: white; padding: 20px 24px; border-radius: 16px; display: flex; align-items: center; gap: 16px; box-shadow: 0px 4px 12px rgba(35, 61, 123, 0.03);">
-                <input type="checkbox" checked style="width: 22px; height: 22px; accent-color: #233D7B; cursor: pointer;" />
-                <div style="flex: 1; color: #233D7B; font-size: 16px; font-weight: 600; text-decoration: line-through; opacity: 0.7;">Rapat kelompok Biologi</div>
-                <div style="color: #78829B; font-size: 14px; font-weight: 600;">09:00 - 10:00</div>
-                <div style="width: 12px; height: 12px; background: #E95D62; border-radius: 50%;"></div>
-                <button style="background: none; border: none; cursor: pointer; color: #78829B; font-size: 20px; font-weight: bold;">⋮</button>
-            </div>
+            @forelse ($todayTasks as $task)
+                @php
+                    $mulai = $task->start_time ? substr((string) $task->start_time, 0, 5) : null;
+                    $selesai = $task->end_time ? substr((string) $task->end_time, 0, 5) : null;
+                    $waktu = $mulai ? ($selesai ? $mulai.' - '.$selesai : $mulai) : 'Tanpa jam';
+                    $warnaKategori = $task->category->color_code ?? '#EAA549';
+                    $warnaPrioritas = match (strtoupper((string) $task->priority)) {
+                        'HIGH' => '#E95D62',
+                        'MEDIUM' => '#F2C453',
+                        default => '#62B58A',
+                    };
+                    $subSelesai = $task->subtasks->where('is_completed', true)->count();
+                    $subTotal = $task->subtasks->count();
+                @endphp
 
-            <!-- List Item 2 (Belum Selesai) -->
-            <div style="background: white; padding: 20px 24px; border-radius: 16px; display: flex; align-items: center; gap: 16px; box-shadow: 0px 4px 12px rgba(35, 61, 123, 0.03);">
-                <input type="checkbox" style="width: 22px; height: 22px; accent-color: #233D7B; cursor: pointer;" />
-                <div style="flex: 1; color: #233D7B; font-size: 16px; font-weight: 600;">Kerjakan latihan Matematika</div>
-                <div style="color: #78829B; font-size: 14px; font-weight: 600;">13:00 - 14:30</div>
-                <div style="width: 12px; height: 12px; background: #F2C453; border-radius: 50%;"></div>
-                <button style="background: none; border: none; cursor: pointer; color: #78829B; font-size: 20px; font-weight: bold;">⋮</button>
-            </div>
+                <div data-task-row class="dp-surface" style="padding: 20px 24px; display: flex; align-items: center; gap: 16px; flex-wrap: wrap;">
+                    <input type="checkbox" class="dashboard-task-checkbox" data-url="{{ route('task.toggle', $task) }}"
+                        {{ $task->is_completed ? 'checked' : '' }}
+                        style="width: 22px; height: 22px; accent-color: #233D7B; cursor: pointer; flex-shrink: 0;">
 
-            <!-- List Item 3 -->
-            <div style="background: white; padding: 20px 24px; border-radius: 16px; display: flex; align-items: center; gap: 16px; box-shadow: 0px 4px 12px rgba(35, 61, 123, 0.03);">
-                <input type="checkbox" style="width: 22px; height: 22px; accent-color: #233D7B; cursor: pointer;" />
-                <div style="flex: 1; color: #233D7B; font-size: 16px; font-weight: 600;">Baca materi Sejarah</div>
-                <div style="color: #78829B; font-size: 14px; font-weight: 600;">16:00 - 17:00</div>
-                <div style="width: 12px; height: 12px; background: #F2C453; border-radius: 50%;"></div>
-                <button style="background: none; border: none; cursor: pointer; color: #78829B; font-size: 20px; font-weight: bold;">⋮</button>
-            </div>
+                    <div data-task-title style="flex: 1; min-width: 180px; color: #233D7B; font-size: 16px; font-weight: 600; {{ $task->is_completed ? 'text-decoration: line-through; opacity: .7;' : '' }}">
+                        {{ $task->title }}
+                        <div style="display: flex; align-items: center; gap: 8px; margin-top: 4px; flex-wrap: wrap;">
+                            <span style="display: inline-flex; align-items: center; gap: 6px; color: #78829B; font-size: 12px; font-weight: 700;">
+                                <span style="width: 8px; height: 8px; background: {{ $warnaKategori }}; border-radius: 50%;"></span>
+                                {{ $task->category->name ?? 'Tanpa Kategori' }}
+                            </span>
+                            @if ($subTotal > 0)
+                                <span style="background: #FDF8E2; color: #47608F; font-size: 11px; font-weight: 800; padding: 3px 8px; border-radius: 999px;">
+                                    {{ $subSelesai }}/{{ $subTotal }} langkah
+                                </span>
+                            @endif
+                        </div>
+                    </div>
 
+                    <div class="dp-num" style="color: #78829B; font-size: 14px; font-weight: 600; white-space: nowrap;">{{ $waktu }}</div>
+                    <div title="Prioritas {{ $task->priority }}" style="width: 12px; height: 12px; background: {{ $warnaPrioritas }}; border-radius: 50%; flex-shrink: 0;"></div>
+
+                    <!-- Menu opsi cepat: titik tiga sekarang buka dropdown, bukan langsung edit -->
+                    <div data-todo-menu style="position: relative; flex-shrink: 0;">
+                        <button type="button" onclick="toggleTodoMenu(event, {{ $task->id }})"
+                            title="Opsi tugas" aria-label="Opsi tugas" aria-expanded="false"
+                            style="background: none; border: none; cursor: pointer; color: #78829B; padding: 6px; line-height: 0; display: flex; align-items: center; justify-content: center;">
+                            <svg class="dp-icon" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                                <circle cx="12" cy="5" r="1.5"></circle>
+                                <circle cx="12" cy="12" r="1.5"></circle>
+                                <circle cx="12" cy="19" r="1.5"></circle>
+                            </svg>
+                        </button>
+
+                        <div id="todo-dropdown-{{ $task->id }}" data-todo-dropdown
+                            style="display: none; position: absolute; right: 0; top: calc(100% + 8px); z-index: 20; min-width: 230px; background: #FDF8E2; border: 1px solid #DDEBFA; border-radius: 12px; box-shadow: 0px 10px 24px rgba(35, 61, 123, 0.12); padding: 8px; font-family: 'Nunito Sans', sans-serif;">
+
+                            <a href="{{ route('task.edit', $task) }}" class="todo-menu-item"
+                                style="display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 8px; color: #233D7B; font-size: 13px; font-weight: 700; text-decoration: none;">
+                                <svg class="dp-icon" fill="none" stroke="#233D7B" viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                    <path d="M12 20h9M16.5 3.5a2.1 2.1 0 013 3L8 18l-4 1 1-4 11.5-11.5z"></path>
+                                </svg>
+                                Edit Tugas
+                            </a>
+
+                            <a href="{{ route('task.index') }}" class="todo-menu-item"
+                                style="display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 8px; color: #233D7B; font-size: 13px; font-weight: 700; text-decoration: none;">
+                                <svg class="dp-icon" fill="none" stroke="#233D7B" viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                    <path d="M2 12s3.6-6 10-6 10 6 10 6-3.6 6-10 6-10-6-10-6z"></path>
+                                    <circle cx="12" cy="12" r="2.5"></circle>
+                                </svg>
+                                Lihat Detail / Pantau Tugas
+                            </a>
+
+                            <form action="{{ route('task.destroy', $task) }}" method="POST"
+                                onsubmit="return confirm('Yakin ingin menghapus tugas ini?');"
+                                style="margin: 0;">
+                                @csrf
+                                @method('DELETE')
+                                <button type="submit" class="todo-menu-item"
+                                    style="width: 100%; display: flex; align-items: center; gap: 10px; text-align: left; padding: 10px 12px; background: none; border: none; border-radius: 8px; color: #9B1C1C; font-size: 13px; font-weight: 700; cursor: pointer; font-family: 'Nunito Sans', sans-serif;">
+                                    <svg class="dp-icon" fill="none" stroke="#9B1C1C" viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                        <path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13M10 11v5m4-5v5"></path>
+                                    </svg>
+                                    Hapus
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            @empty
+                <div class="dp-surface" style="padding: 32px; text-align: center; color: #78829B; font-size: 14px;">
+                    Belum ada tugas terjadwal.
+                </div>
+            @endforelse
         </div>
+
+        <!-- Jadwal Rutin Hari Ini -->
+        <div style="display: flex; flex-direction: column; gap: 16px;">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <h2 style="color: #233D7B; font-size: 22px; font-weight: 800; margin: 0;">Jadwal Rutin Mingguan</h2>
+                <span style="color: #78829B; font-size: 13px; font-weight: 700;">{{ $todayRecurrings->count() }} jadwal</span>
+            </div>
+
+            @forelse ($todayRecurrings as $recurring)
+                @php
+                    $jamMulai = $recurring->start_time ? substr((string) $recurring->start_time, 0, 5) : 'Rutin';
+                @endphp
+                <div class="dp-surface" style="padding: 16px 24px; display: flex; align-items: center; gap: 14px;">
+                    <span style="width: 10px; height: 10px; background: {{ $recurring->category->color_code ?? '#5489D6' }}; border-radius: 50%; flex-shrink: 0;"></span>
+                    <div class="dp-item-title" style="flex: 1; color: #233D7B; font-size: 15px; font-weight: 700;">{{ $recurring->title }}</div>
+                    <div class="dp-num" style="color: #78829B; font-size: 13px; font-weight: 700;">{{ $jamMulai }}</div>
+                    <span style="background: #DDF3E6; color: #1D6B45; font-size: 11px; font-weight: 800; padding: 5px 10px; border-radius: 6px;">Rutin</span>
+                </div>
+            @empty
+                <div class="dp-surface" style="padding: 24px; text-align: center; color: #78829B; font-size: 14px;">
+                    Tidak ada jadwal rutin untuk hari ini.
+                </div>
+            @endforelse
+        </div>
+
+        <!-- Deadline Mendatang (maksimal 4) -->
+        <div style="display: flex; flex-direction: column; gap: 16px;">
+            <h2 style="color: #233D7B; font-size: 22px; font-weight: 800; margin: 0;">Deadline Mendatang</h2>
+
+            @forelse ($upcomingDeadlines as $deadline)
+                @php
+                    $sisaHari = (int) today()->startOfDay()->diffInDays($deadline->date->copy()->startOfDay(), false);
+                    $labelDeadline = match (true) {
+                        $sisaHari < 0 => 'Terlewat '.abs($sisaHari).' hari',
+                        $sisaHari === 0 => 'Hari ini',
+                        default => $sisaHari.' hari lagi',
+                    };
+                @endphp
+                <div class="dp-surface" style="padding: 18px 24px; display: flex; align-items: center; gap: 14px; flex-wrap: wrap;">
+                    <span style="width: 10px; height: 10px; background: {{ $deadline->category->color_code ?? '#EAA549' }}; border-radius: 50%; flex-shrink: 0;"></span>
+                    <div class="dp-item-title" style="flex: 1; min-width: 160px; color: #233D7B; font-size: 15px; font-weight: 700;">{{ $deadline->title }}</div>
+                    <div class="dp-num" style="color: #78829B; font-size: 13px; font-weight: 600;">{{ $deadline->date->format('d M Y') }}</div>
+                    <span style="background: {{ $sisaHari <= 2 ? '#FCE1E1' : '#FBE2A8' }}; color: #233D7B; font-size: 12px; font-weight: 700; padding: 5px 12px; border-radius: 6px; display: inline-flex; align-items: center; gap: 7px;">
+                        <span class="dp-dot" style="background: {{ $sisaHari <= 2 ? '#E95D62' : '#EAA549' }};"></span>
+                        {{ $labelDeadline }}
+                    </span>
+                </div>
+            @empty
+                <div class="dp-surface" style="padding: 24px; text-align: center; color: #78829B; font-size: 14px;">
+                    Belum ada deadline setelah hari ini.
+                </div>
+            @endforelse
+        </div>
+
     </main>
 </div>
+
+<style>
+    /* Hover item dropdown tetap pakai palet DailyPlan. */
+    .todo-menu-item {
+        transition: background 0.15s ease;
+    }
+
+    .todo-menu-item:hover {
+        background: #DDEBFA !important;
+    }
+</style>
+
+@push('scripts')
+<script>
+    const csrfTokenDashboard = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') ?? '';
+
+    // --- Menu opsi cepat pada tiap baris To-Do ---
+    function tutupSemuaTodoMenu() {
+        document.querySelectorAll('[data-todo-dropdown]').forEach(function (dropdown) {
+            dropdown.style.display = 'none';
+            const trigger = dropdown.closest('[data-todo-menu]')?.querySelector('[aria-expanded]');
+            if (trigger) {
+                trigger.setAttribute('aria-expanded', 'false');
+            }
+        });
+    }
+
+    function toggleTodoMenu(event, taskId) {
+        event.preventDefault();
+        event.stopPropagation(); // biar global click listener nggak langsung nutup menu ini
+
+        const menu = document.getElementById('todo-dropdown-' + taskId);
+        if (!menu) return;
+
+        const akanDibuka = menu.style.display !== 'block';
+
+        // Kalau ada menu lain yang kebuka, tutup dulu.
+        tutupSemuaTodoMenu();
+
+        if (akanDibuka) {
+            menu.style.display = 'block';
+            const trigger = menu.closest('[data-todo-menu]')?.querySelector('[aria-expanded]');
+            if (trigger) {
+                trigger.setAttribute('aria-expanded', 'true');
+            }
+        }
+    }
+
+    // Klik di luar dropdown = tutup semua menu.
+    document.addEventListener('click', function (event) {
+        if (event.target.closest('[data-todo-menu]')) return;
+        tutupSemuaTodoMenu();
+    });
+
+    // Tombol Escape juga nutup menu, biar enak dipakai keyboard.
+    document.addEventListener('keydown', function (event) {
+        if (event.key === 'Escape') {
+            tutupSemuaTodoMenu();
+        }
+    });
+
+    // Centang tugas di dashboard: langsung PATCH ke database, tanpa reload.
+    document.addEventListener('change', async function (event) {
+        const checkbox = event.target.closest('.dashboard-task-checkbox');
+        if (!checkbox) return;
+
+        const sebelumnya = !checkbox.checked; // keadaan sebelum user mengubah centangan
+        checkbox.disabled = true;
+
+        try {
+            const response = await fetch(checkbox.dataset.url, {
+                method: 'PATCH',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                    'X-CSRF-TOKEN': csrfTokenDashboard,
+                    'X-Requested-With': 'XMLHttpRequest',
+                },
+                body: '{}',
+            });
+
+            if (!response.ok) {
+                throw new Error('Gagal memperbarui status tugas.');
+            }
+
+            const data = await response.json();
+            checkbox.checked = data.is_completed;
+
+            const baris = checkbox.closest('[data-task-row]');
+            const judul = baris?.querySelector('[data-task-title]');
+            if (judul) {
+                judul.style.textDecoration = data.is_completed ? 'line-through' : 'none';
+                judul.style.opacity = data.is_completed ? '.7' : '1';
+            }
+
+            // Ringkasan angka ikut berubah juga biar nggak menampilkan data lama.
+            const completedEl = document.querySelector('[data-stat="completed"]');
+            const pendingEl = document.querySelector('[data-stat="pending"]');
+            const progressEl = document.querySelector('[data-progress]');
+
+            let selesai = Number(completedEl?.textContent ?? 0);
+            let pending = Number(pendingEl?.textContent ?? 0);
+
+            if (data.is_completed && !sebelumnya) {
+                selesai++;
+                pending = Math.max(0, pending - 1);
+            } else if (!data.is_completed && sebelumnya) {
+                selesai = Math.max(0, selesai - 1);
+                pending++;
+            }
+
+            if (completedEl) completedEl.textContent = selesai;
+            if (pendingEl) pendingEl.textContent = pending;
+
+            const total = selesai + pending;
+            if (progressEl) {
+                progressEl.textContent = (total > 0 ? Math.round(selesai / total * 100) : 0) + '%';
+            }
+        } catch (error) {
+            checkbox.checked = sebelumnya;
+            alert(error.message || 'Gagal memperbarui status tugas.');
+        } finally {
+            checkbox.disabled = false;
+        }
+    });
+</script>
+@endpush
 @endsection

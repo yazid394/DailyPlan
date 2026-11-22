@@ -16,12 +16,22 @@ class AuthenticationTest extends TestCase
 
     public function test_login_page_can_be_rendered(): void
     {
-        $this->get(route('login'))->assertOk();
+        $this->get(route('login'))
+            ->assertOk()
+            ->assertSee('href="'.url('/').'"', false)
+            ->assertSee('Plus Jakarta Sans')
+            ->assertSee('Maskot DailyPlan')
+            ->assertDontSee('images/icon/DailyPlan.png');
     }
 
     public function test_register_page_can_be_rendered(): void
     {
-        $this->get(route('register'))->assertOk();
+        $this->get(route('register'))
+            ->assertOk()
+            ->assertSee('href="'.url('/').'"', false)
+            ->assertSee('Plus Jakarta Sans')
+            ->assertSee('Maskot DailyPlan')
+            ->assertDontSee('images/icon/DailyPlan.png');
     }
 
     public function test_new_user_can_register_and_is_persisted_to_the_database(): void
@@ -177,7 +187,9 @@ class AuthenticationTest extends TestCase
 
     public function test_landing_page_is_publicly_accessible(): void
     {
-        $this->get(route('home'))->assertOk();
+        $this->get(route('home'))
+            ->assertOk()
+            ->assertSee('images/icon/DailyPlan-polos.png');
     }
 
     public function test_seeded_user_can_log_in(): void

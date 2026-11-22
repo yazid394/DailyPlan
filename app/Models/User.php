@@ -5,6 +5,7 @@ namespace App\Models;
 use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
@@ -29,6 +30,30 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
         ];
+    }
+
+    /**
+     * The user's initials for the profile avatar.
+     *
+     * @return Attribute<string, never>
+     */
+    protected function initials(): Attribute
+    {
+        return Attribute::make(
+            get: function (): string {
+                $nameParts = preg_split('/\s+/u', trim((string) $this->name), -1, PREG_SPLIT_NO_EMPTY) ?: [];
+
+                if ($nameParts === []) {
+                    return 'U';
+                }
+
+                if (count($nameParts) === 1) {
+                    return mb_strtoupper(mb_substr($nameParts[0], 0, 2));
+                }
+
+                return mb_strtoupper(mb_substr($nameParts[0], 0, 1).mb_substr($nameParts[1], 0, 1));
+            },
+        );
     }
 
     /**

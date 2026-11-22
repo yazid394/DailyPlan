@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
-#[Fillable(['title', 'date', 'start_time', 'end_time', 'priority', 'deadline_date', 'notes', 'is_completed'])]
+#[Fillable(['user_id', 'title', 'category_id', 'date', 'start_time', 'end_time', 'priority', 'deadline_date', 'notes', 'is_completed'])]
 class Task extends Model
 {
     /**

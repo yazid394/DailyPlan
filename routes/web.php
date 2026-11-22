@@ -1,5 +1,8 @@
 <?php
 
+use App\Http\Controllers\CalendarController;
+use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\TaskController;
 use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
 
@@ -19,26 +22,31 @@ Route::middleware('guest')->group(function () {
 Route::middleware('auth')->group(function () {
     Route::get('/dashboard', [UserController::class, 'dashboard'])->name('dashboard');
     Route::post('/logout', [UserController::class, 'logout'])->name('logout');
-});
 
-Route::middleware('auth')->group(function () {
+    // Profil & preferensi tidur
+    Route::get('/profil', [ProfileController::class, 'index'])->name('profile.index');
+    Route::put('/profil', [ProfileController::class, 'update'])->name('profile.update');
+    Route::put('/profil/preferensi', [ProfileController::class, 'updatePreferences'])->name('profile.preferences.update');
 
-    Route::get('/dashboard', function () {
-        return view('dashboard');
-    })->name('dashboard');
+    // Kalender
+    Route::get('/kalender', [CalendarController::class, 'index'])->name('calender.index');
 
-    Route::get('/kalender', function () {
-        // Ini akan memanggil file calender.blade.php di folder views lu
-        return view('calender');
-    })->name('calender');
+    // API internal untuk ambil data saat bulan digeser
+    Route::get('/kalender/data', [CalendarController::class, 'fetchMonthData'])->name('calender.data');
 
-    Route::get('/tugas', function () {
-        // Ini akan memanggil file task.blade.php
-        return view('task');
-    })->name('task');
+    // Tugas
+    Route::get('/tugas', [TaskController::class, 'index'])->name('task.index');
+    Route::get('/tugas/create', [TaskController::class, 'create'])->name('task.create');
+    Route::post('/tugas', [TaskController::class, 'store'])->name('task.store');
+    Route::get('/tugas/{task}/edit', [TaskController::class, 'edit'])->name('task.edit');
+    Route::put('/tugas/{task}', [TaskController::class, 'update'])->name('task.update');
+    Route::delete('/tugas/{task}', [TaskController::class, 'destroy'])->name('task.destroy');
 
-    Route::get('/kemajuan', function () {
-        // Ini akan memanggil file progress.blade.php
-        return view('progress');
-    })->name('progress');
+    // Aksi realtime dari halaman Pantau Tugas
+    Route::patch('/tugas/{task}/toggle', [TaskController::class, 'toggleComplete'])->name('task.toggle');
+    Route::patch('/subtugas/{subtask}/toggle', [TaskController::class, 'toggleSubtask'])->name('subtask.toggle');
+
+    // Kemajuan
+    Route::get('/kemajuan', [UserController::class, 'progress'])->name('progress.index');
+    Route::get('/kemajuan/export-pdf', [UserController::class, 'exportProgressPdf'])->name('progress.pdf');
 });
